@@ -263,6 +263,15 @@
             color: #2196f3;
             font-weight: bold;
         }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
@@ -376,6 +385,16 @@
     </div>
 
     <script>
+        // API Configuration - n8n endpoints
+        const API_CONFIG = {
+            BASE_URL: 'https://dylan-automation.app.n8n.cloud/webhook',
+            ENDPOINTS: {
+                UNREGISTERED_EMPLOYEES: '/api/unregistered-employees',
+                TEAM_OPTIONS: '/api/team-options',
+                UPDATE_EMPLOYEE: '/api/update-employee'
+            }
+        };
+
         // ตัวแปรทั่วไป
         let currentStep = 0;
         let selectedData = {
@@ -400,18 +419,64 @@
                 await loadEmployees();
             } catch (error) {
                 console.error('เกิดข้อผิดพลาดในการเริ่มต้น LIFF:', error);
-                alert('ไม่สามารถเริ่มต้นแอปได้ กรุณาลองใหม่อีกครั้ง');
+                showError('ไม่สามารถเริ่มต้นแอปได้ กรุณาลองใหม่อีกครั้ง');
             }
         });
         
+        // แสดงข้อผิดพลาด
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            
+            const content = document.querySelector('.content');
+            content.insertBefore(errorDiv, content.firstChild);
+            
+            // ลบข้อความแสดงข้อผิดพลาดหลัง 5 วินาที
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
         // โหลดรายชื่อพนักงานที่ยังไม่ได้ลงทะเบียน
         async function loadEmployees() {
             try {
-                // เรียก API จริง (ใช้งานจริง)
-                // const response = await fetch('YOUR_N8N_API_ENDPOINT/unregistered-employees');
-                // employees = await response.json();
+                console.log('Loading employees from API...');
                 
-                // ข้อมูลทดสอบ (ลบออกเมื่อใช้งานจริง)
+                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UNREGISTERED_EMPLOYEES}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Employees loaded:', data);
+
+                // แปลงข้อมูลให้เข้ากับรูปแบบที่ใช้ในแอป
+                employees = data.map(emp => ({
+                    id: emp.employeeId || emp.id,
+                    name: emp.name,
+                    employeeId: emp.employeeId || emp.id
+                }));
+
+                if (employees.length === 0) {
+                    showError('ไม่พบพนักงานที่ยังไม่ได้ลงทะเบียน');
+                    return;
+                }
+                
+                renderEmployeeList();
+                showStep(1); // ไปยังขั้นตอนเลือกชื่อ
+                
+            } catch (error) {
+                console.error('เกิดข้อผิดพลาดในการโหลดข้อมูล:', error);
+                showError('ไม่สามารถโหลดข้อมูลพนักงานได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+                
+                // ใช้ข้อมูลทดสอบเป็น fallback
                 employees = [
                     { id: 'A57250-41', name: 'AI', employeeId: 'A57250-41' },
                     { id: 'A57250-42', name: 'AUM', employeeId: 'A57250-42' },
@@ -439,10 +504,7 @@
                 ];
                 
                 renderEmployeeList();
-                showStep(1); // ไปยังขั้นตอนเลือกชื่อ
-            } catch (error) {
-                console.error('เกิดข้อผิดพลาดในการโหลดข้อมูล:', error);
-                alert('ไม่สามารถโหลดข้อมูลพนักงานได้');
+                showStep(1);
             }
         }
         
@@ -486,26 +548,55 @@
             document.getElementById(nextBtnId).disabled = false;
             return value;
         }
+
+        // โหลดตัวเลือกทีมจาก n8n API
+        async function loadTeamOptions(branch, position) {
+            try {
+                console.log(`Loading team options for branch: ${branch}, position: ${position}`);
+                
+                const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TEAM_OPTIONS}?branch=${encodeURIComponent(branch)}&position=${encodeURIComponent(position)}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const teams = await response.json();
+                console.log('Team options loaded:', teams);
+                return teams;
+                
+            } catch (error) {
+                console.error('เกิดข้อผิดพลาดในการโหลดตัวเลือกทีม:', error);
+                showError('ไม่สามารถโหลดตัวเลือกทีมได้');
+                
+                // ใช้ข้อมูลทดสอบเป็น fallback
+                let teams = [];
+                if (position === 'CLN' || position === 'RECEPTION') {
+                    teams = [{ value: 'Manager Team', name: 'Manager Team', desc: 'ทีมผู้จัดการ' }];
+                } else if (position === 'STP') {
+                    if (branch === 'Asoke') {
+                        teams = [
+                            { value: 'อนาคต', name: 'อนาคต', desc: 'ทีมอนาคต' },
+                            { value: 'มั่งมีศรีสุข', name: 'มั่งมีศรีสุข', desc: 'ทีมมั่งมีศรีสุข' },
+                            { value: 'Extra', name: 'Extra', desc: 'ทีมเอ็กซ์ตร้า' }
+                        ];
+                    } else if (branch === 'SaiMai') {
+                        teams = [{ value: 'Saimai', name: 'Saimai', desc: 'ทีมสายไหม' }];
+                    }
+                }
+                return teams;
+            }
+        }
         
         // แสดงตัวเลือกทีม
-        function renderTeamOptions(branch, position) {
-            let teams = [];
-            
-            if (position === 'CLN' || position === 'RECEPTION') {
-                teams = [{ value: 'Manager Team', name: 'Manager Team', desc: 'ทีมผู้จัดการ' }];
-            } else if (position === 'STP') {
-                if (branch === 'Asoke') {
-                    teams = [
-                        { value: 'อนาคต', name: 'อนาคต', desc: 'ทีมอนาคต' },
-                        { value: 'มั่งมีศรีสุข', name: 'มั่งมีศรีสุข', desc: 'ทีมมั่งมีศรีสุข' },
-                        { value: 'Extra', name: 'Extra', desc: 'ทีมเอ็กซ์ตร้า' }
-                    ];
-                } else if (branch === 'SaiMai') {
-                    teams = [
-                        { value: 'Saimai', name: 'Saimai', desc: 'ทีมสายไหม' }
-                    ];
-                }
-            }
+        async function renderTeamOptions(branch, position) {
+            const teams = await loadTeamOptions(branch, position);
             
             const teamHtml = teams.map(team => `
                 <div class="option-button" data-team="${team.value}" onclick="selectedData.team = selectOption('.option-button', '${team.value}', 'teamNextBtn')">
@@ -546,7 +637,7 @@
         }
         
         // แสดงขั้นตอน
-        function showStep(step) {
+        async function showStep(step) {
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
             
             switch(step) {
@@ -568,7 +659,7 @@
                     break;
                 case 4:
                     document.getElementById('teamStep').classList.add('active');
-                    renderTeamOptions(selectedData.branch, selectedData.position);
+                    await renderTeamOptions(selectedData.branch, selectedData.position);
                     updateProgress(80);
                     break;
                 case 5:
@@ -592,21 +683,34 @@
         // ส่งข้อมูลขั้นสุดท้าย
         async function submitData() {
             try {
+                console.log('Submitting employee data...');
+                
                 const profile = await liff.getProfile();
                 const submitData = {
-                    ...selectedData,
-                    lineUserId: profile.userId,
-                    lineDisplayName: profile.displayName
+                    employeeId: selectedData.employeeId,
+                    name: selectedData.name,
+                    branch: selectedData.branch,
+                    position: selectedData.position,
+                    team: selectedData.team,
+                    lineUserId: profile.userId
                 };
                 
-                // เรียก n8n API (ใช้งานจริง)
-                // const response = await fetch('YOUR_N8N_API_ENDPOINT/update-employee', {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json' },
-                //     body: JSON.stringify(submitData)
-                // });
+                console.log('Data to submit:', submitData);
                 
-                console.log('ข้อมูลที่ส่ง:', submitData);
+                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPDATE_EMPLOYEE}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify(submitData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Submit result:', result);
                 
                 // แสดงหน้าจอสำเร็จ
                 showStep(6);
@@ -618,7 +722,7 @@
                 
             } catch (error) {
                 console.error('เกิดข้อผิดพลาดในการส่งข้อมูล:', error);
-                alert('ไม่สามารถลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง');
+                showError('ไม่สามารถลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง');
             }
         }
         
@@ -648,7 +752,7 @@
             document.getElementById('branchBackBtn').addEventListener('click', () => showStep(1));
             document.getElementById('branchNextBtn').addEventListener('click', () => showStep(3));
             document.getElementById('positionBackBtn').addEventListener('click', () => showStep(2));
-            document.getElementById('positionNextBtn').addEventListener('click', () => {
+            document.getElementById('positionNextBtn').addEventListener('click', async () => {
                 if (selectedData.position === 'CLN' || selectedData.position === 'RECEPTION') {
                     selectedData.team = 'Manager Team';
                     showStep(5); // ข้ามการเลือกทีม ไปยังขั้นตอนยืนยัน
