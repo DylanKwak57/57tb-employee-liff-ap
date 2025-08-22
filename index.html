@@ -579,6 +579,23 @@
 
                 const teams = await response.json();
                 console.log('Team options loaded:', teams);
+                
+                // API가 빈 배열을 반환하는 경우 fallback 데이터 사용
+                if (!teams || teams.length === 0) {
+                    console.log('API returned empty array, using fallback data');
+                    if (position === 'STP' || position === 'HS') {
+                        if (branch === 'Asoke') {
+                            return [
+                                { value: 'อนาคต', name: 'อนาคต', desc: 'ทีมอนาคต' },
+                                { value: 'มั่งมีศรีสุข', name: 'มั่งมีศรีสุข', desc: 'ทีมมั่งมีศรีสุข' },
+                                { value: 'Extra', name: 'Extra', desc: 'ทีมเอ็กซ์ตร้า' }
+                            ];
+                        } else if (branch === 'SaiMai') {
+                            return [{ value: 'Saimai', name: 'Saimai', desc: 'ทีมสายไหม' }];
+                        }
+                    }
+                }
+                
                 return teams;
                 
             } catch (error) {
@@ -589,7 +606,7 @@
                 let teams = [];
                 if (position === 'CLN' || position === 'RECEPTION') {
                     teams = [{ value: 'Manager Team', name: 'Manager Team', desc: 'ทีมผู้จัดการ' }];
-                } else if (position === 'STP') {
+                } else if (position === 'STP' || position === 'HS') {
                     if (branch === 'Asoke') {
                         teams = [
                             { value: 'อนาคต', name: 'อนาคต', desc: 'ทีมอนาคต' },
