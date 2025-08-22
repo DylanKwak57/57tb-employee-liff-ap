@@ -345,6 +345,16 @@
                         <div class="title">CLN</div>
                         <div class="desc">แผนกทำความสะอาด</div>
                     </div>
+                    <div class="option-button" data-position="ADMIN">
+                        <span class="icon">💻</span>
+                        <div class="title">ADMIN</div>
+                        <div class="desc">ออนไลน์คอนซัลแทนต์</div>
+                    </div>
+                    <div class="option-button" data-position="HS">
+                        <span class="icon">✂️</span>
+                        <div class="title">HS</div>
+                        <div class="desc">นักออกแบบทรงผม</div>
+                    </div>
                 </div>
                 <div class="button-group">
                     <button class="btn btn-secondary" id="positionBackBtn">ก่อนหน้า</button>
@@ -753,11 +763,14 @@
             document.getElementById('branchNextBtn').addEventListener('click', () => showStep(3));
             document.getElementById('positionBackBtn').addEventListener('click', () => showStep(2));
             document.getElementById('positionNextBtn').addEventListener('click', async () => {
-                if (selectedData.position === 'CLN' || selectedData.position === 'RECEPTION') {
+                if (selectedData.position === 'CLN' || selectedData.position === 'RECEPTION' || selectedData.position === 'ADMIN') {
                     selectedData.team = 'Manager Team';
                     showStep(5); // ข้ามการเลือกทีม ไปยังขั้นตอนยืนยัน
+                } else if (selectedData.branch === 'SaiMai' && (selectedData.position === 'HS' || selectedData.position === 'STP')) {
+                    selectedData.team = 'Saimai';
+                    showStep(5); // ข้ามการเลือกทีม ไปยังขั้นตอนยืนยัน
                 } else {
-                    showStep(4); // ไปยังขั้นตอนเลือกทีม
+                    showStep(4); // Asoke의 HS/STP만 ไปยังขั้นตอนเลือกทีม
                 }
             });
             document.getElementById('teamBackBtn').addEventListener('click', () => showStep(3));
