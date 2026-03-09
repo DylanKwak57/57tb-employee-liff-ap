@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลงทะเบียนข้อมูลพนักงาน 57TB</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 30px 20px;
+        }
+        
+        .step {
+            display: none;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .option-grid {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .option-button {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .option-button:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        
+        .option-button.selected {
+            background: #2196f3;
+            border-color: #2196f3;
+            color: white;
+        }
+        
+        .option-button .icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .option-button .title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .option-button .desc {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #2196f3;
+        }
+        
+        .employee-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .employee-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .employee-item:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        
+        .employee-item.selected {
+            background: #2196f3;
+            border-color: #2196f3;
+            color: white;
+        }
+        
+        .employee-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .employee-id {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1976d2;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn:disabled {
+            background: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: #e9ecef;
+            margin-bottom: 20px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #2196f3;
+            transition: width 0.3s ease;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2196f3;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .summary-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .summary-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .summary-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .summary-value {
+            color: #2196f3;
+            font-weight: bold;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 57TB</h1>
+            <p>ระบบลงทะเบียนข้อมูลพนักงาน</p>
+        </div>
+        
+        <div class="content">
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <!-- Loading Screen -->
+            <div id="loadingStep" class="step active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>กำลังโหลดข้อมูลพนักงาน...</p>
+                </div>
+            </div>
+            
+            <!-- Step 1: Name Selection -->
+            <div id="nameStep" class="step">
+                <div class="step-title">👤 เลือกชื่อของคุณ</div>
+                <input type="text" class="search-box" id="nameSearch" placeholder="🔍 ค้นหาชื่อ...">
+                <div class="employee-list" id="employeeList"></div>
+                <div class="button-group">
+                    <button class="btn btn-primary" id="nameNextBtn" disabled>ถัดไป</button>
+                </div>
+            </div>
+            
+            <!-- Step 2: Branch Selection -->
+            <div id="branchStep" class="step">
+                <div class="step-title">🏢 เลือกสาขาที่ทำงาน</div>
+                <div class="option-grid">
+                    <div class="option-button" data-branch="Asoke">
+                        <span class="icon">🏙️</span>
+                        <div class="title">Asoke</div>
+                        <div class="desc">สาขาอโศก</div>
+                    </div>
+                    <div class="option-button" data-branch="SaiMai">
+                        <span class="icon">🌆</span>
+                        <div class="title">SaiMai</div>
+                        <div class="desc">สาขาสายไหม</div>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="branchBackBtn">ก่อนหน้า</button>
+                    <button class="btn btn-primary" id="branchNextBtn" disabled>ถัดไป</button>
+                </div>
+            </div>
+            
+            <!-- Step 3: Position Selection -->
+            <div id="positionStep" class="step">
+                <div class="step-title">💼 เลือกตำแหน่งงาน</div>
+                <div class="option-grid">
+                    <div class="option-button" data-position="STP">
+                        <span class="icon">📚</span>
+                        <div class="title">STP</div>
+                        <div class="desc">นักเรียนฝึกงาน</div>
+                    </div>
+                    <div class="option-button" data-position="RECEPTION">
+                        <span class="icon">📞</span>
+                        <div class="title">RECEPTION</div>
+                        <div class="desc">แผนกต้อนรับ</div>
+                    </div>
+                    <div class="option-button" data-position="CLN">
+                        <span class="icon">🧹</span>
+                        <div class="title">CLN</div>
+                        <div class="desc">แผนกทำความสะอาด</div>
+                    </div>
+                    <div class="option-button" data-position="ADMIN">
+                        <span class="icon">💻</span>
+                        <div class="title">ADMIN</div>
+                        <div class="desc">ออนไลน์คอนซัลแทนต์</div>
+                    </div>
+                    <div class="option-button" data-position="HS">
+                        <span class="icon">✂️</span>
+                        <div class="title">HS</div>
+                        <div class="desc">นักออกแบบทรงผม</div>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="positionBackBtn">ก่อนหน้า</button>
+                    <button class="btn btn-primary" id="positionNextBtn" disabled>ถัดไป</button>
+                </div>
+            </div>
+            
+            <!-- Step 4: Team Selection -->
+            <div id="teamStep" class="step">
+                <div class="step-title">👥 เลือกทีมที่สังกัด</div>
+                <div class="option-grid" id="teamOptions"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="teamBackBtn">ก่อนหน้า</button>
+                    <button class="btn btn-primary" id="teamNextBtn" disabled>ถัดไป</button>
+                </div>
+            </div>
+            
+            <!-- Step 5: Confirmation -->
+            <div id="confirmStep" class="step">
+                <div class="step-title">✅ ตรวจสอบข้อมูล</div>
+                <div class="summary-card" id="summaryCard"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="confirmBackBtn">แก้ไข</button>
+                    <button class="btn btn-primary" id="confirmSubmitBtn">ยืนยัน</button>
+                </div>
+            </div>
+            
+            <!-- Step 6: Success -->
+            <div id="successStep" class="step">
+                <div class="loading">
+                    <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
+                    <h2 style="color: #28a745; margin-bottom: 20px;">ลงทะเบียนสำเร็จ!</h2>
+                    <p style="color: #6c757d;">ข้อมูลพนักงานได้รับการบันทึกเรียบร้อยแล้ว</p>
+                    <p style="color: #6c757d; margin-top: 10px;">ตอนนี้คุณสามารถรับข่าวสารและสิทธิประโยชน์พนักงานได้แล้ว</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration - n8n endpoints
+        const API_CONFIG = {
+            BASE_URL: 'https://dylan-automation.app.n8n.cloud/webhook',  // ✅ Cloud URL
+            ENDPOINTS: {
+                UNREGISTERED_EMPLOYEES: '/api/unregistered-employees',
+                TEAM_OPTIONS: '/api/team-options',
+                UPDATE_EMPLOYEE: '/api/update-employee'
+            }
+        };
+
+        // ตัวแปรทั่วไป
+        let currentStep = 0;
+        let selectedData = {
+            employeeId: '',
+            name: '',
+            branch: '',
+            position: '',
+            team: ''
+        };
+        let employees = [];
+        
+        // เริ่มต้น LIFF
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await liff.init({ liffId: '2007748465-jvdwq0nG' });
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+                
+                await loadEmployees();
+            } catch (error) {
+                console.error('เกิดข้อผิดพลาดในการเริ่มต้น LIFF:', error);
+                showError('ไม่สามารถเริ่มต้นแอปได้ กรุณาลองใหม่อีกครั้ง');
+            }
+        });
+        
+        // แสดงข้อผิดพลาด
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            
+            const content = document.querySelector('.content');
+            content.insertBefore(errorDiv, content.firstChild);
+            
+            // ลบข้อความแสดงข้อผิดพลาดหลัง 5 วินาที
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // โหลดรายชื่อพนักงานที่ยังไม่ได้ลงทะเบียน
+        async function loadEmployees() {
+            try {
+                console.log('Loading employees from API...');
+                
+                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UNREGISTERED_EMPLOYEES}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Employees loaded:', data);
+
+                // แปลงข้อมูลให้เข้ากับรูปแบบที่ใช้ในแอป
+                employees = data.map(emp => ({
+                    id: emp.employeeId || emp.id,
+                    name: emp.name,
+                    employeeId: emp.employeeId || emp.id
+                }));
+
+                if (employees.length === 0) {
+                    showError('ไม่พบพนักงานที่ยังไม่ได้ลงทะเบียน');
+                    return;
+                }
+                
+                renderEmployeeList();
+                showStep(1); // ไปยังขั้นตอนเลือกชื่อ
+                
+            } catch (error) {
+                console.error('เกิดข้อผิดพลาดในการโหลดข้อมูล:', error);
+                showError('ไม่สามารถโหลดข้อมูลพนักงานได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+                
+                // ใช้ข้อมูลทดสอบเป็น fallback
+                employees = [
+                    { id: 'A57250-41', name: 'AI', employeeId: 'A57250-41' },
+                    { id: 'A57250-42', name: 'AUM', employeeId: 'A57250-42' },
+                    { id: 'A57250-43', name: 'BEE', employeeId: 'A57250-43' },
+                    { id: 'A57250-44', name: 'C', employeeId: 'A57250-44' },
+                    { id: 'A57250-45', name: 'EI', employeeId: 'A57250-45' },
+                    { id: 'A57250-46', name: 'FAH', employeeId: 'A57250-46' },
+                    { id: 'A57250-47', name: 'FEER', employeeId: 'A57250-47' },
+                    { id: 'A57250-48', name: 'FON', employeeId: 'A57250-48' },
+                    { id: 'A57250-49', name: 'KAEW', employeeId: 'A57250-49' },
+                    { id: 'A57250-50', name: 'LALA', employeeId: 'A57250-50' },
+                    { id: 'A57250-51', name: 'ME', employeeId: 'A57250-51' },
+                    { id: 'A57250-52', name: 'MEEN', employeeId: 'A57250-52' },
+                    { id: 'A57250-53', name: 'MOOK', employeeId: 'A57250-53' },
+                    { id: 'A57250-54', name: 'NAMWWAN', employeeId: 'A57250-54' },
+                    { id: 'A57250-55', name: 'NOONID', employeeId: 'A57250-55' },
+                    { id: 'A57250-56', name: 'NUNGNING', employeeId: 'A57250-56' },
+                    { id: 'A57250-57', name: 'SOE SOE', employeeId: 'A57250-57' },
+                    { id: 'A57250-58', name: 'SOI', employeeId: 'A57250-58' },
+                    { id: 'A57250-59', name: 'SUK', employeeId: 'A57250-59' },
+                    { id: 'A57250-60', name: 'THIN', employeeId: 'A57250-60' },
+                    { id: 'A57250-61', name: 'VIEW', employeeId: 'A57250-61' },
+                    { id: 'A57250-62', name: 'YU', employeeId: 'A57250-62' },
+                    { id: 'A57250-63', name: 'ZIN', employeeId: 'A57250-63' }
+                ];
+                
+                renderEmployeeList();
+                showStep(1);
+            }
+        }
+        
+        // แสดงรายชื่อพนักงาน
+        function renderEmployeeList(searchTerm = '') {
+            const filteredEmployees = employees.filter(emp => 
+                emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                emp.employeeId.includes(searchTerm)
+            );
+            
+            const listHtml = filteredEmployees.map(emp => `
+                <div class="employee-item" data-employee-id="${emp.employeeId}" onclick="selectEmployee('${emp.employeeId}', '${emp.name}')">
+                    <div class="employee-name">${emp.name}</div>
+                    <div class="employee-id">${emp.employeeId}</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('employeeList').innerHTML = listHtml;
+        }
+        
+        // เลือกพนักงาน
+        function selectEmployee(employeeId, name) {
+            selectedData.employeeId = employeeId;
+            selectedData.name = name;
+            
+            // อัปเดตสถานะการเลือก
+            document.querySelectorAll('.employee-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelector(`[data-employee-id="${employeeId}"]`).classList.add('selected');
+            
+            document.getElementById('nameNextBtn').disabled = false;
+        }
+        
+        // จัดการการเลือกตัวเลือก
+        function selectOption(selector, value, nextBtnId) {
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.closest('.option-button').classList.add('selected');
+            document.getElementById(nextBtnId).disabled = false;
+            return value;
+        }
+
+        // โหลดตัวเลือกทีมจาก n8n API
+        async function loadTeamOptions(branch, position) {
+            try {
+                console.log(`Loading team options for branch: ${branch}, position: ${position}`);
+                
+                const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TEAM_OPTIONS}?branch=${encodeURIComponent(branch)}&position=${encodeURIComponent(position)}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const teams = await response.json();
+                console.log('Team options loaded:', teams);
+                
+                // API가 빈 배열을 반환하는 경우 fallback 데이터 사용
+                if (!teams || teams.length === 0) {
+                    console.log('API returned empty array, using fallback data');
+                    if (position === 'STP' || position === 'HS') {
+                        if (branch === 'Asoke') {
+                            return [
+                                { value: 'อนาคต', name: 'อนาคต', desc: 'ทีมอนาคต' },
+                                { value: 'มั่งมีศรีสุข', name: 'มั่งมีศรีสุข', desc: 'ทีมมั่งมีศรีสุข' },
+                                { value: 'Extra', name: 'Extra', desc: 'ทีมเอ็กซ์ตร้า' }
+                            ];
+                        } else if (branch === 'SaiMai') {
+                            return [{ value: 'Saimai', name: 'Saimai', desc: 'ทีมสายไหม' }];
+                        }
+                    }
+                }
+                
+                return teams;
+                
+            } catch (error) {
+                console.error('เกิดข้อผิดพลาดในการโหลดตัวเลือกทีม:', error);
+                showError('ไม่สามารถโหลดตัวเลือกทีมได้');
+                
+                // ใช้ข้อมูลทดสอบเป็น fallback
+                let teams = [];
+                if (position === 'CLN' || position === 'RECEPTION') {
+                    teams = [{ value: 'Manager Team', name: 'Manager Team', desc: 'ทีมผู้จัดการ' }];
+                } else if (position === 'STP' || position === 'HS') {
+                    if (branch === 'Asoke') {
+                        teams = [
+                            { value: 'อนาคต', name: 'อนาคต', desc: 'ทีมอนาคต' },
+                            { value: 'มั่งมีศรีสุข', name: 'มั่งมีศรีสุข', desc: 'ทีมมั่งมีศรีสุข' },
+                            { value: 'Extra', name: 'Extra', desc: 'ทีมเอ็กซ์ตร้า' }
+                        ];
+                    } else if (branch === 'SaiMai') {
+                        teams = [{ value: 'Saimai', name: 'Saimai', desc: 'ทีมสายไหม' }];
+                    }
+                }
+                return teams;
+            }
+        }
+        
+        // แสดงตัวเลือกทีม
+        async function renderTeamOptions(branch, position) {
+            const teams = await loadTeamOptions(branch, position);
+            
+            const teamHtml = teams.map(team => `
+                <div class="option-button" data-team="${team.value}" onclick="selectedData.team = selectOption('.option-button', '${team.value}', 'teamNextBtn')">
+                    <span class="icon">👥</span>
+                    <div class="title">${team.name}</div>
+                    <div class="desc">${team.desc}</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('teamOptions').innerHTML = teamHtml;
+        }
+        
+        // แสดงสรุปข้อมูล
+        function renderSummary() {
+            const summaryHtml = `
+                <div class="summary-row">
+                    <span class="summary-label">ชื่อ</span>
+                    <span class="summary-value">${selectedData.name}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">รหัสพนักงาน</span>
+                    <span class="summary-value">${selectedData.employeeId}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">สาขา</span>
+                    <span class="summary-value">${selectedData.branch}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">ตำแหน่ง</span>
+                    <span class="summary-value">${selectedData.position}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">ทีม</span>
+                    <span class="summary-value">${selectedData.team}</span>
+                </div>
+            `;
+            document.getElementById('summaryCard').innerHTML = summaryHtml;
+        }
+        
+        // แสดงขั้นตอน
+        async function showStep(step) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            
+            switch(step) {
+                case 0:
+                    document.getElementById('loadingStep').classList.add('active');
+                    updateProgress(0);
+                    break;
+                case 1:
+                    document.getElementById('nameStep').classList.add('active');
+                    updateProgress(20);
+                    break;
+                case 2:
+                    document.getElementById('branchStep').classList.add('active');
+                    updateProgress(40);
+                    break;
+                case 3:
+                    document.getElementById('positionStep').classList.add('active');
+                    updateProgress(60);
+                    break;
+                case 4:
+                    document.getElementById('teamStep').classList.add('active');
+                    await renderTeamOptions(selectedData.branch, selectedData.position);
+                    updateProgress(80);
+                    break;
+                case 5:
+                    document.getElementById('confirmStep').classList.add('active');
+                    renderSummary();
+                    updateProgress(100);
+                    break;
+                case 6:
+                    document.getElementById('successStep').classList.add('active');
+                    updateProgress(100);
+                    break;
+            }
+            currentStep = step;
+        }
+        
+        // อัปเดตแถบความคืบหน้า
+        function updateProgress(percent) {
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+        
+        // ส่งข้อมูลขั้นสุดท้าย
+        async function submitData() {
+            try {
+                console.log('Submitting employee data...');
+                
+                const profile = await liff.getProfile();
+                const submitData = {
+                    employeeId: selectedData.employeeId,
+                    name: selectedData.name,
+                    branch: selectedData.branch,
+                    position: selectedData.position,
+                    team: selectedData.team,
+                    lineUserId: profile.userId
+                };
+                
+                console.log('Data to submit:', submitData);
+                
+                const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPDATE_EMPLOYEE}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify(submitData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Submit result:', result);
+                
+                // แสดงหน้าจอสำเร็จ
+                showStep(6);
+                
+                // ปิดแอปหลัง 3 วินาที
+                setTimeout(() => {
+                    liff.closeWindow();
+                }, 3000);
+                
+            } catch (error) {
+                console.error('เกิดข้อผิดพลาดในการส่งข้อมูล:', error);
+                showError('ไม่สามารถลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง');
+            }
+        }
+        
+        // ตั้งค่า Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // ฟังก์ชันค้นหา
+            document.getElementById('nameSearch').addEventListener('input', function(e) {
+                renderEmployeeList(e.target.value);
+            });
+            
+            // เลือกสาขา
+            document.querySelectorAll('[data-branch]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectedData.branch = selectOption('[data-branch]', this.dataset.branch, 'branchNextBtn');
+                });
+            });
+            
+            // เลือกตำแหน่ง
+            document.querySelectorAll('[data-position]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectedData.position = selectOption('[data-position]', this.dataset.position, 'positionNextBtn');
+                });
+            });
+            
+            // ปุ่มต่างๆ
+            document.getElementById('nameNextBtn').addEventListener('click', () => showStep(2));
+            document.getElementById('branchBackBtn').addEventListener('click', () => showStep(1));
+            document.getElementById('branchNextBtn').addEventListener('click', () => showStep(3));
+            document.getElementById('positionBackBtn').addEventListener('click', () => showStep(2));
+            document.getElementById('positionNextBtn').addEventListener('click', async () => {
+                if (selectedData.position === 'CLN' || selectedData.position === 'RECEPTION' || selectedData.position === 'ADMIN') {
+                    selectedData.team = 'Manager Team';
+                    showStep(5); // ข้ามการเลือกทีม ไปยังขั้นตอนยืนยัน
+                } else if (selectedData.branch === 'SaiMai' && (selectedData.position === 'HS' || selectedData.position === 'STP')) {
+                    selectedData.team = 'Saimai';
+                    showStep(5); // ข้ามการเลือกทีม ไปยังขั้นตอนยืนยัน
+                } else {
+                    showStep(4); // Asoke의 HS/STP만 ไปยังขั้นตอนเลือกทีม
+                }
+            });
+            document.getElementById('teamBackBtn').addEventListener('click', () => showStep(3));
+            document.getElementById('teamNextBtn').addEventListener('click', () => showStep(5));
+            document.getElementById('confirmBackBtn').addEventListener('click', () => showStep(1));
+            document.getElementById('confirmSubmitBtn').addEventListener('click', submitData);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
