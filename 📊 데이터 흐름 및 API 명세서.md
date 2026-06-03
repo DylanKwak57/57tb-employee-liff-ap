@@ -343,6 +343,20 @@ function validateSubmitData(data) {
 }
 ```
 
+#### 백엔드 처리 — SQL ID(회사프로그램 ID) 자동 채움 [2026-06-03 추가]
+n8n "57 Line User ID" 워크플로우(`JedxWlzNZ8JsL2GS`)가 `/api/update-employee` 수신 후 처리하는 흐름:
+1. **Find Employee** — `name`으로 Employee Master 페이지 검색
+2. **Lookup SQL ID (신규 노드)** — 회사 MSSQL `view_tb_employee`에서 직원의 `zid`(회사프로그램 ID) 조회 (READ-ONLY SELECT)
+   - 매칭 키: `znickname` = name, `zbranch` = 지점코드(Asoke→`03`, SaiMai→`04`), `zstatus` = `'Y'`(재직)
+   - 쿼리: `SELECT TOP 1 zid FROM view_tb_employee WHERE znickname=$1 AND zbranch=$2 AND zstatus='Y'`
+   - credential: `g3rH2M8PYppNVh9I` (57TB Microsoft SQL account, DB `db_57total_thai`)
+   - `alwaysOutputData: true` + `onError: continueRegularOutput` — 조회 실패해도 흐름 유지
+3. **Update Employee** — Branch/Team/Position/LINE User ID + **SQL ID = 조회된 zid** 함께 저장
+   - SQL ID 필드는 `ignoreIfEmpty: true`: 매칭 실패(동명이인 부재·철자 차이) 시 **SQL ID만 빈 채로 두고 나머지는 정상 저장**(graceful). 못 찾은 건 수동 보완.
+4. **Line MSM** — 등록 완료 LINE 메시지 발송
+
+> 배경: 이전엔 이 API가 Branch/Team/Position/LINE User ID만 채우고 SQL ID는 비워둬서 매번 수동 입력해야 했음(예: PAOPAO). 이 노드 추가로 신입이 LINE 등록하는 순간 회사프로그램 ID까지 자동으로 채워짐. 라이브 e2e 검증 완료(graceful 경로). 글로벌 메모리 `resigned-staff-line-protection.md` 인접 기록.
+
 #### Response Error (400)
 ```json
 {
